@@ -52,8 +52,11 @@ def pronounce(sentence):
                 if nextsyl.cho() in 'ㄱㄷㅈ':
                     syl.setJongEmpty()
                     nextsyl.setCho('ㅋㅌㅊ'['ㄱㄷㅈ'.index(nextsyl.cho())])
-                elif nextsyl.cho() == 'ㅎ':
-                    '''작성중'''
+                elif nextsyl.cho() == 'ㅅ':
+                    syl.setJong('#ㄴㄹ'['ㅎㄶㅀ'.index(p)])
+                    nextsyl.setCho('ㅆ')
+                elif nextsyl.cho() in 'ㄴㅇ':
+                    syl.setJong('#ㄴㄹ'['ㅎㄶㅀ'.index(p)])
                     pass
                     
                     
