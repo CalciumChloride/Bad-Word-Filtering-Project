@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Jul 29 13:42:11 2021
 
-'''
-2021.07.28 다운로드 후 변형
+@author: KYH
+
 https://github.com/neotune/python-korean-handler
-깃허브코드 복붙가능한가요?? 일단 복붙했는데 문제시 수정
-'''
+https://github.com/JDongian/python-jamo/blob/master/jamo/jamo.py
+참고함
+
+"""
 
 import re
+import config
 
 """
     초성 중성 종성 분리 하기
@@ -33,132 +38,126 @@ import re
 """
 
 
-# 유니코드 한글 시작 : 44032, 끝 : 55199
-BASE_CODE, CHOSUNG, JUNGSUNG = 44032, 588, 28
+'''
+아래와 같은 인코딩 방식을 thime 이라고 하겠음 (맘대로 지음)
+모든 글자마다 앞에 _CHAR_SEPERATOR (Ş)
+한글은 초성, 중성, 종성이 나뉘어
+종성 앞에 _JONGSUNG_SEPERATOR (Ŧ)
+가 들어감
+한글이 아닌 문자는 그대로 들어감
+'''
+
+
+
+_HANGUL_OFFSET = 44032
+
+_JONGSUNG_SEPERATOR = config._jongsung_seperator
+_JONGSUNG_EMPTY = config._jongsung_empty
+
+
 
 # 초성 리스트. 00 ~ 18
-CHOSUNG_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
+_CHOSUNG_LIST = list('ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ')
 
 # 중성 리스트. 00 ~ 20
-JUNGSUNG_LIST = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ']
+_JUNGSUNG_LIST = list('ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ')
 
 # 종성 리스트. 00 ~ 27 + 1(1개 없음)
-JONGSUNG_LIST = [' ', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
+_JONGSUNG_LIST = list(_JONGSUNG_EMPTY + 'ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ')
 
 
 def isHangulSyllable(letter):
-    return re.match('.*[ㄱ-ㅎㅏ-ㅣ가-힣]+.*', letter) is not None
+    if type(letter) == str and len(letter) == 1:
+        return re.match('.*[ㄱ-ㅎㅏ-ㅣ가-힣]+.*', letter) is not None
+    else:
+        raise Exception(f'Error: isHangulSyllable({letter}) : 인자는 한 글자 문자열이어야 함')
 
 def isJa(p):
-    return p != 'ㅇ' and p in CHOSUNG_LIST
+    return p in _CHOSUNG_LIST
 
 
-class Character():
-    ''' Super class '''
-    def __init__(self):
-        self.char = ' '
-        self.hangul = -1
+def _hgchar_seperate(keyword):
+    if type(keyword) == str and len(keyword) == 1 and isHangulSyllable(keyword):
+        char_code = ord(keyword) - _HANGUL_OFFSET
         
+        char1 = char_code // 588
+        lead = _CHOSUNG_LIST[char1]
         
-    def __eq__(self, other):
-        if issubclass(type(other), Character):
-            return self.char == other.char
-        elif type(other) == str:
-            return self.char == other
-        else:
-            return False
+        char2 = (char_code - (588 * char1)) // 28
+        vowel = _JUNGSUNG_LIST[char2]
         
+        char3 = int((char_code - (588 * char1) - (28 * char2)))
+        tail = _JONGSUNG_EMPTY
+        if char3:
+            tail = _JONGSUNG_LIST[char3]
         
-    def isHangul(self):
-        return self.hangul
-    
-    def isjongEmpty(self):
-        return False
-    
-    def cho(self):
-        return self.char
-    
-    def jung(self):
-        return self.char
-    
-    def jong(self):
-        return self.char
+        return lead + vowel + _JONGSUNG_SEPERATOR + tail
+    else:
+        raise Exception(f'Error: _hgchar_seperate({keyword}) : 인자는 한글 한 글자여야 함')
 
 
-class NoneHangulChar(Character):
-    def __init__(self, char):
-        self.char = char
-        self.hangul = 0
-        
-
-class HangulSyllable(Character):
-    def __init__(self, char):
-        self.char = char
-        self.p = seperate(self.char)
-        self.hangul = 0
-        
-    
-    def seperate(self, keyword):
-        char_code = ord(keyword) - BASE_CODE
-        d = {}
-        
-        char1 = int(char_code / CHOSUNG)
-        d['cho'] = CHOSUNG_LIST[char1]
-        
-        char2 = int((char_code - (CHOSUNG * char1)) / JUNGSUNG)
-        d['jung'] = JUNGSUNG_LIST[char2]
-        
-        char3 = int((char_code - (CHOSUNG * char1) - (JUNGSUNG * char2)))
-        if char3==0:
-            d['jong'] = '#'
-        else:
-            d['jong'] = JONGSUNG_LIST[char3]
-                    
-        return d
-
-    
-    def isjongEmpty(self):
-        return self.p['jong'] == '#'
-    
-    def cho(self):
-        return self.p['cho']
-    
-    def jung(self):
-        return self.p['jung']
-    
-    def jong(self):
-        return self.p['jong']
-    
-    def setCho(self, t):
-        self.p['cho'] = t
-    
-    def setJung(self, t):
-        self.p['jung'] = t
-    
-    def setJong(self, t):
-        self.p['jong'] = t
-        
-    def setJongEmpty(self):
-        self.p['jong'] = '#'
+def _hgchar_join(lead, vowel, tail=_JONGSUNG_EMPTY):
+    try:
+        lead = _CHOSUNG_LIST.index(lead)
+        vowel = _JUNGSUNG_LIST.index(vowel)
+        tail = _JONGSUNG_LIST.index(tail)
+        return chr((((lead * 21) + vowel) * 28 + tail) + _HANGUL_OFFSET)
+    except ValueError as e:
+        print(e)
+        print(f'_hgchar_join({lead}, {vowel}, {tail}) : 인자는 한글 초성, 중성, 종성 하나씩이어야 함')
     
 
 
-def seperate(test_keyword):
-    split_keyword_list = list(test_keyword)
 
-    result = list()
+def str_to_thime(string):
+    if type(string) != str:
+        raise Exception(f'str_to_thime({string}) : 인자는 문자열이어야 함')
+        return
+    
+    split_keyword_list = list(string)
+
+    result = ''
     for keyword in split_keyword_list:
         if isHangulSyllable(keyword):
-            result.append(HangulSyllable(keyword))
+            result += _hgchar_seperate(keyword)
         else:
-            result.append(NoneHangulChar(keyword))
+            result += keyword
             
     return result
 
 
-def join(keyword_list):
-    pass
+
+def thime_to_str(thime):
+    result = ''
+    i = 0
+    while i < len(thime):
+        if isJa(thime[i]):
+            char = thime[i:i+4]
+            result += _hgchar_join(char[0], char[1], char[3])
+            i += 4
+            
+        else:
+            result += thime[i]
+            i += 1
+            
+    return result
     
 
+
 if __name__ == '__main__':
-    print(seperate('일단 앉아봐!'))
+    string = '휴!!잘 된다~~'
+    print('\n원래:')
+    print(string)
+    print('\n')
+    
+    thime = str_to_thime(string)
+    print('\nTHIME:')
+    print(thime)
+    print('\n')
+    
+    won = thime_to_str(thime)
+    print('\n되돌림:')
+    print(won)
+    print('같은가?', won == string)
+    print('\n')
+

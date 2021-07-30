@@ -1,63 +1,36 @@
 # -*- coding: utf-8 -*-
 
 
-import phonological
+import config, phonological
 
 
-JONGMATCHING = {'ㄱ':'ㄱ', 'ㄲ':'ㄱ', 'ㅋ':'ㄱ', 'ㄳ': 'ㄱ',
-                      'ㄷ': 'ㄷ', 'ㄸ': 'ㄷ', 'ㅌ': 'ㄷ', 'ㅅ': 'ㄷ', 'ㅆ': 'ㄷ', 'ㅈ': 'ㄷ', 'ㅊ': 'ㄷ',
-                      'ㅍ': 'ㅂ',
-                      'ㄵ': 'ㄴ',
-                      'ㄼ': 'ㄹ', 'ㄽ': 'ㄹ', 'ㄾ': 'ㄹ',
-                      'ㅄ': 'ㅂ',
-                      'ㄺ': 'ㄱ',
-                      'ㄻ': 'ㅁ',
-                      'ㄿ': 'ㅂ'}
+matching = []
 
+
+with open('matching.txt', 'r', encoding='utf-8') as _f:
+    _lines = _f.readlines()
+    for _line in _lines:
+        if _line[0] == '%':
+            continue
+        a = _line.strip().split()
+        a[0] = a[0].replace('#', config._jongsung_seperator)
+        a[1] = a[1].replace('#', config._jongsung_seperator)
+        a[0] = a[0].replace('-', config._jongsung_empty)
+        a[1] = a[1].replace('-', config._jongsung_empty)
+        matching.append(a)
+    
 
 
 # 표준 발음법에 따른 변환 결과를 반환
 def pronounce(sentence):
-    seperated = phonological.seperate(sentence)
+    thime = phonological.str_to_thime(sentence)
+    for m in matching:
+        thime = thime.replace(m[0], m[1])
+    converted = phonological.thime_to_str(thime)
+    return converted
     
-    # 4장 받침의 발음
     
-    for i in len(seperated):
-        syl = seperated[i]
-        nextsyl = seperated[i+1]
-        if i+1 < len(seperated):
-            nextsyl = phonological.Character('-')
-
-        if not syl.isjongEmpty():
-            p = syl.jong()
-            syl.setJong(JONGMATCHING[p])
-            
-            if p == 'ㄼ':
-                # ‘밟-’은 자음 앞에서 [밥]으로 발음
-                if syl == '밟':
-                    if phonological.isJa(nextsyl.cho()):
-                        syl.setJong('ㅂ')
-                # ‘넓-’은 넓죽하다, 넓둥글다만 [넙]으로 발음
-                elif syl == '넓':
-                    if nextsyl == '죽' or nextsyl == '둥':
-                        syl.setJong('ㅂ')
-                    
-            elif p == 'ㄺ':
-                '''용언의 어간인''' # ‘ㄺ’은 ‘ㄱ’ 앞에서 [ㄹ]로 발음한다. ex) 맑고[말꼬]
-                if nextsyl.cho() == 'ㄱ':
-                    syl.setJong('ㄹ')
-            
-            # 제12항  받침 ‘ㅎ’의 발음
-            elif p in 'ㅎㄶㅀ':
-                if nextsyl.cho() in 'ㄱㄷㅈ':
-                    syl.setJongEmpty()
-                    nextsyl.setCho('ㅋㅌㅊ'['ㄱㄷㅈ'.index(nextsyl.cho())])
-                elif nextsyl.cho() == 'ㅅ':
-                    syl.setJong('#ㄴㄹ'['ㅎㄶㅀ'.index(p)])
-                    nextsyl.setCho('ㅆ')
-                elif nextsyl.cho() in 'ㄴㅇ':
-                    syl.setJong('#ㄴㄹ'['ㅎㄶㅀ'.index(p)])
-                    pass
-                    
-                    
-                    
+if __name__ == '__main__':
+    # print(matching)
+    print(pronounce('닭이 먹혔다'))
+    
