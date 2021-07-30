@@ -63,7 +63,7 @@ _CHOSUNG_LIST = list('ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'
 _JUNGSUNG_LIST = list('ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ')
 
 # 종성 리스트. 00 ~ 27 + 1(1개 없음)
-_JONGSUNG_LIST = list(_JONGSUNG_EMPTY + 'ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ')
+_JONGSUNG_LIST = [_JONGSUNG_EMPTY] + list('ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ')
 
 
 def isHangulSyllable(letter):
@@ -133,7 +133,10 @@ def thime_to_str(thime):
     while i < len(thime):
         if isJa(thime[i]):
             char = thime[i:i+4]
-            result += _hgchar_join(char[0], char[1], char[3])
+            try:
+                result += _hgchar_join(char[0], char[1], char[3])
+            except:
+                print(f'thime_to_str 잘못된 문자열 | {char}')
             i += 4
             
         else:

@@ -32,5 +32,5 @@ def pronounce(sentence):
     
 if __name__ == '__main__':
     # print(matching)
-    print(pronounce('닭이 먹혔다'))
+    print(pronounce('밟아, 밟고 않지 묽고'))
     
