@@ -25,12 +25,15 @@ with open('matching.txt', 'r', encoding='utf-8') as _f:
 def pronounce(sentence):
     thime = phonological.str_to_thime(sentence)
     for m in matching:
+        if thime != thime.replace(m[0], m[1]):
+            print(f'[{phonological.thime_to_str(thime)}] >',
+                  f'[{phonological.thime_to_str(thime.replace(m[0], m[1]))}]')
         thime = thime.replace(m[0], m[1])
     converted = phonological.thime_to_str(thime)
     return converted
     
     
 if __name__ == '__main__':
-    # print(matching)
-    print(pronounce('밟아, 밟고 않지 묽고'))
+    anan = input('입력하세요: ')
+    print(pronounce(anan))
     
